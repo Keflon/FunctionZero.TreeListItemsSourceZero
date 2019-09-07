@@ -2,10 +2,27 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <Authors>Keith Pickford</Authors>
+    <Company>Function Zero Ltd</Company>
+    <Description>The purpose of this package is to allow a ListView-type-control to behave like a TreeView and display hierarchical data. This is particularly useful if you want to adapt a GridView to behave like a TreeView. See documentation for examples
+</Description>
+    <Copyright>2019 Function Zero Ltd</Copyright>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/Keflon/FunctionZero.TreeListItemsSourceZero</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Keflon/FunctionZero.TreeListItemsSourceZero</RepositoryUrl>
+    <PackageTags>ListView TreeView GridView DataSource ItemsSource net standard</PackageTags>
+    <PackageReleaseNotes>Initial release</PackageReleaseNotes>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="FunctionZero.TreeZero" Version="1.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>

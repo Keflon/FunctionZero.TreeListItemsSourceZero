@@ -1,4 +1,4 @@
-﻿# FunctionZero.TreeItemsSourceZero
+﻿# FunctionZero.TreeListItemsSourceZero
 
 The purpose of this package is to allow a ListView-type-control to behave like a TreeView and display hierarchical data.
 This is particularly useful if you want to adapt a GridView to behave like a TreeView, like this:
