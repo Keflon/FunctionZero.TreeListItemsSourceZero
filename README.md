@@ -3,8 +3,11 @@
 The purpose of this package is to allow a ListView-type-control to behave like a TreeView and display hierarchical data.
 This is particularly useful if you want to adapt a GridView to behave like a TreeView, like this:
   
-![alt text](https://raw.githubusercontent.com/Keflon/FunctionZero.TreeGridViewZero/master/SampleTreeGrid.png "TreeGridView")
+![alt text](https://raw.githubusercontent.com/Keflon/FunctionZero.UWP.TreeGridViewZero/master/SampleTreeGrid.png "TreeGridView")
 
+## Sample Project
+[UWP sample project](https://github.com/Keflon/FunctionZero.UWP.TreeGridViewZero "FunctionZero.UWP.TreeGridViewZero")  
+You can also take a look at the unit tests for usage examples
 
 ## Basic Usage
 
