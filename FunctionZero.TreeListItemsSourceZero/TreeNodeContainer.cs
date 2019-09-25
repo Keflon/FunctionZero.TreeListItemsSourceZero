@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using FunctionZero.TreeZero;
 
@@ -11,7 +12,7 @@ namespace FunctionZero.TreeListItemsSourceZero
     public class TreeNodeContainer<T> : Node<TreeNodeContainer<T>>
     {
         private bool _isExpanded;
-        private bool _isVisible;
+        //private bool _isVisible;
         private IEnumerable _dataChildren;
         private bool _showChevron;
 
@@ -27,18 +28,40 @@ namespace FunctionZero.TreeListItemsSourceZero
                 }
             }
         }
-        public bool IsVisible
+        //public bool IsVisible
+        //{
+        //    get => _isVisible;
+        //    internal set
+        //    {
+        //        if (_isVisible != value)
+        //        {
+        //            _isVisible = value;
+        //            OnPropertyChanged();
+        //        }
+        //    }
+        //}
+
+        public virtual bool IsVisible
         {
-            get => _isVisible;
-            internal set
+            get
             {
-                if (_isVisible != value)
-                {
-                    _isVisible = value;
-                    OnPropertyChanged();
-                }
+                if (Parent == null)
+                    return false;
+
+                return Parent.IsVisible && Parent.IsExpanded;
             }
         }
+        private bool _oldIsVisible;
+        public void UpdateIsVisible()
+        {
+            var newIsVisible = IsVisible;
+            if (_oldIsVisible != newIsVisible)
+            {
+                _oldIsVisible = newIsVisible;
+                this.OnPropertyChanged(nameof(IsVisible));
+            }
+        }
+
         public bool ShowChevron
         {
             get => _showChevron;
@@ -79,7 +102,7 @@ namespace FunctionZero.TreeListItemsSourceZero
         {
             Data = data;
             // HACK: Is it???
-            if(manager == null)
+            if (manager == null)
             {
                 Manager = (TreeItemsSourceManager<T>)this;
             }
@@ -87,7 +110,7 @@ namespace FunctionZero.TreeListItemsSourceZero
             {
                 Manager = manager;
             }
-
+            _oldIsVisible = IsVisible;
             Children.CollectionChanged += Children_CollectionChanged;
         }
 
@@ -192,6 +215,7 @@ namespace FunctionZero.TreeListItemsSourceZero
         }
 
         private ObservableCollection<T> _observableDataChildren;
+        internal bool _isInTree;
 
         protected override async void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
@@ -207,7 +231,13 @@ namespace FunctionZero.TreeListItemsSourceZero
             else if (propertyName == nameof(IsVisible))
             {
                 if (_dataChildren == null && IsExpanded == true)
+                {
+                    if(IsVisible == false)
+                    {
+                        Debug.WriteLine("ERROR");
+                    }
                     GetDataChildren();
+                }
 
                 Manager.ChangeNode(this, NodeAction.IsVisibleChanged);
             }

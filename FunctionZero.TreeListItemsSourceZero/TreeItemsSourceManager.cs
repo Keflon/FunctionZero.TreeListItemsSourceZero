@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
@@ -13,6 +14,14 @@ namespace FunctionZero.TreeListItemsSourceZero
         /// </summary>
         private readonly ObservableCollection<TreeNodeContainer<T>> _itemsSource;
         private bool _isTreeRootShown;
+
+        private Predicate<T> _filterPredicate;
+
+        public void SetFilterPredicate(Predicate<T> predicate)
+        {
+            _filterPredicate = predicate;
+            // TODO: ...
+        }
 
         public bool IsTreeRootShown
         {
@@ -39,6 +48,7 @@ namespace FunctionZero.TreeListItemsSourceZero
         public TreeItemsSourceManager(bool isTreeRootShown, T data, Func<T, bool> getCanHaveChildren, Func<T, IEnumerable> getChildren) : base(null, data)
         {
             _itemsSource = new ObservableCollection<TreeNodeContainer<T>>();
+            _itemsSource.CollectionChanged += _itemsSource_CollectionChanged;
             TreeNodeChildren = new ReadOnlyObservableCollection<TreeNodeContainer<T>>(_itemsSource);
 
             IsTreeRootShown = isTreeRootShown;
@@ -47,9 +57,26 @@ namespace FunctionZero.TreeListItemsSourceZero
             GetChildren = getChildren;
             GetCanHaveChildren = getCanHaveChildren;
 
-            this.IsVisible = true;
+            //this.IsVisible = true;
+            this.UpdateIsVisible();
         }
 
+        private void _itemsSource_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            switch (e.Action)
+            {
+                case NotifyCollectionChangedAction.Add:
+                    ((TreeNodeContainer<T>)e.NewItems[0])._isInTree = true;
+                    break;
+                case NotifyCollectionChangedAction.Remove:
+                    ((TreeNodeContainer<T>)e.OldItems[0])._isInTree = false;
+                    break;
+                case NotifyCollectionChangedAction.Move:
+                case NotifyCollectionChangedAction.Replace:
+                case NotifyCollectionChangedAction.Reset:
+                    throw new NotImplementedException();
+            }
+        }
         // TODO: If action is NodeCollapsed, set a bool in eventargs to signal to caller (watch out for other subscribers) the child TreeGridNodes should be deallocated.
         // TODO: And / or have a strategy e.g. recycle 1000 containers, automatically recycle collapsed nodes by oldest first.
         // TODO: This is the connection between UI-databound TreeGridNodes (and their Data) and the app., so other cool stuff might go here.
@@ -72,25 +99,34 @@ namespace FunctionZero.TreeListItemsSourceZero
                     if (node.IsExpanded != false)
                         throw new InvalidOperationException("Attempt to add aTreeGridNode where IsExpanded == true. If that's deliberate, ask, and the developer will supoport it.");
 
-                    if (node.Parent.IsVisible && node.Parent.IsExpanded)
-                        node.IsVisible = true;
+                    node.UpdateIsVisible();
 
                     if (node.IsVisible)
                         // If the newly added node is expanded, it will already have children. Add them to the ItemsSource.
                         if (node.IsExpanded == true)
                             foreach (var child in node.Children)
-                                child.IsVisible = true;
+                                //child.IsVisible = true;
+                                child.UpdateIsVisible();
 
                     break;
                 case NodeAction.Removed:
                     // If the newly removed node had children, remove them from the ItemsSource. TEST! THINK! Will the Children already be dealt with?
                     // If not (they're not) then ought they be dealt with *before* removing 'this'.
                     // Memory leak here? If we recycle containers, we need to reclaim the child containers, otherwise the GC will claim them (confirm there are no other references to them)
-                    if (node.IsExpanded == true)
+#if false
+    if (node.IsExpanded == true)
                         foreach (var child in node.Children)
-                            child.IsVisible = false;
+                            //child.IsVisible = false;
+                            child.UpdateIsVisible();
 
-                    node.IsVisible = false;
+
+                    //node.IsVisible = false;
+#else
+                    if (this.Parent != null)
+                        throw new InvalidOperationException("ERROR9");
+
+                    node.UpdateIsVisible();
+#endif
                     break;
 
                 case NodeAction.IsExpandedChanged:
@@ -98,17 +134,14 @@ namespace FunctionZero.TreeListItemsSourceZero
                     {
                         if (node._hasMadeChildren == false)
                             node.MakeChildContainers();
-
-                        foreach (var child in node.Children)
-                            child.IsVisible = true;
                     }
                     else
                     {
                         Debug.Assert(node._hasMadeChildren == true);
-
-                        foreach (var child in node.Children)
-                            child.IsVisible = false;
                     }
+                    foreach (var child in node.Children)
+                        child.UpdateIsVisible();
+
                     break;
                 case NodeAction.IsVisibleChanged:
                     node.UpdateShowChevron();
@@ -119,16 +152,14 @@ namespace FunctionZero.TreeListItemsSourceZero
                         // Root node is handled separately.
                         Insert(node);
 
-                        if (node.IsExpanded)
-                        {
-                            foreach (var child in node.Children)
-                                child.IsVisible = true;
-                        }
+                        foreach (var child in node.Children)
+                            child.UpdateIsVisible();
                     }
                     else
                     {
                         foreach (var child in node.Children)
-                            child.IsVisible = false;
+                            child.UpdateIsVisible();
+
                         _itemsSource.Remove(node);
                     }
                     break;
@@ -153,14 +184,18 @@ namespace FunctionZero.TreeListItemsSourceZero
 
         private int GetInsertOffset(TreeNodeContainer<T> item)
         {
-            int offset = 0;
+            int offset = 1;
 
             foreach (var child in item.Children)
-                if (child.IsVisible)
-                    offset += GetInsertOffset(child) + 1;
+                if (child._isInTree)
+                    offset += GetInsertOffset(child);// + 1;
 
             return offset;
         }
+
+
+
+        public override bool IsVisible => true;
 
         protected override async void OnPropertyChanged([CallerMemberName] string propertyName = null)
         {
