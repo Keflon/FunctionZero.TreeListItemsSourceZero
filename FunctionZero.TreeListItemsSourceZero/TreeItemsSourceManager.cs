@@ -69,7 +69,6 @@ namespace FunctionZero.TreeListItemsSourceZero
 
             SetFilterPredicate((o) => true);
 
-            //this.IsVisible = true;
             this.UpdateIsVisible();
         }
 
@@ -121,23 +120,14 @@ namespace FunctionZero.TreeListItemsSourceZero
 
                     break;
                 case NodeAction.Removed:
-                    // If the newly removed node had children, remove them from the ItemsSource. TEST! THINK! Will the Children already be dealt with?
-                    // If not (they're not) then ought they be dealt with *before* removing 'this'.
-                    // Memory leak here? If we recycle containers, we need to reclaim the child containers, otherwise the GC will claim them (confirm there are no other references to them)
-#if false
-    if (node.IsExpanded == true)
-                        foreach (var child in node.Children)
-                            //child.IsVisible = false;
-                            child.UpdateIsVisible();
-
-
-                    //node.IsVisible = false;
-#else
                     if (this.Parent != null)
                         throw new InvalidOperationException("ERROR9");
 
+                    // The node has already been removed; now we remove any children, by calling UpdateIsVisible when node.Parent is null
+                    // TODO: Confirm it is safe to remove children *after* their parent
+                    // TODO: Confirm they do in fact go.
+                    // TODO: Look for memory leaks.
                     node.UpdateIsVisible();
-#endif
                     break;
 
                 case NodeAction.IsExpandedChanged:
@@ -196,8 +186,6 @@ namespace FunctionZero.TreeListItemsSourceZero
 
             return offset;
         }
-
-
 
         public override bool IsVisible => true;
 

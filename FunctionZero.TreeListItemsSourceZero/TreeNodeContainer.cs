@@ -12,7 +12,6 @@ namespace FunctionZero.TreeListItemsSourceZero
     public class TreeNodeContainer<T> : Node<TreeNodeContainer<T>>
     {
         private bool _isExpanded;
-        //private bool _isVisible;
         private IEnumerable _dataChildren;
         private bool _showChevron;
 
@@ -28,29 +27,12 @@ namespace FunctionZero.TreeListItemsSourceZero
                 }
             }
         }
-        //public bool IsVisible
-        //{
-        //    get => _isVisible;
-        //    internal set
-        //    {
-        //        if (_isVisible != value)
-        //        {
-        //            _isVisible = value;
-        //            OnPropertyChanged();
-        //        }
-        //    }
-        //}
 
         public virtual bool IsVisible
         {
-            get
-            {
-                if (Parent == null)
-                    return false;
-
-                return Parent.IsVisible && Parent.IsExpanded && Manager._filterPredicate(this.Data);
-            }
+            get => Parent == null ? false : Parent.IsVisible && Parent.IsExpanded && Manager._filterPredicate(this.Data);
         }
+
         private bool _oldIsVisible;
         public void UpdateIsVisible()
         {
@@ -116,7 +98,6 @@ namespace FunctionZero.TreeListItemsSourceZero
 
         // TODO: _hasMadeChildren rename to something like _hasChildContainers.
         // TODO: Refactor Children, dataChildren
-        // TODO: Refactor TreeGridNode<T>. It's a hierarchy node, or TreeNode. Nothing to do with a grid.
         private void _dataChildren_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
         {
             switch (e.Action)
@@ -232,7 +213,7 @@ namespace FunctionZero.TreeListItemsSourceZero
             {
                 if (_dataChildren == null && IsExpanded == true)
                 {
-                    if(IsVisible == false)
+                    if (IsVisible == false)
                     {
                         Debug.WriteLine("ERROR");
                     }
