@@ -48,7 +48,7 @@ namespace FunctionZero.TreeListItemsSourceZero
                 if (Parent == null)
                     return false;
 
-                return Parent.IsVisible && Parent.IsExpanded;
+                return Parent.IsVisible && Parent.IsExpanded && Manager._filterPredicate(this.Data);
             }
         }
         private bool _oldIsVisible;

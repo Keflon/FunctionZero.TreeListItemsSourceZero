@@ -15,12 +15,22 @@ namespace FunctionZero.TreeListItemsSourceZero
         private readonly ObservableCollection<TreeNodeContainer<T>> _itemsSource;
         private bool _isTreeRootShown;
 
-        private Predicate<T> _filterPredicate;
+        internal Predicate<T> _filterPredicate;
 
         public void SetFilterPredicate(Predicate<T> predicate)
         {
             _filterPredicate = predicate;
-            // TODO: ...
+            FilterNode(this);
+        }
+
+        private void FilterNode(TreeNodeContainer<T> node)
+        {
+            foreach (var child in node.Children)
+            {
+                child.UpdateIsVisible();
+                if (child.IsVisible)
+                    FilterNode(child);
+            }
         }
 
         public bool IsTreeRootShown
@@ -56,6 +66,8 @@ namespace FunctionZero.TreeListItemsSourceZero
                 OnPropertyChanged(nameof(IsTreeRootShown));
             GetChildren = getChildren;
             GetCanHaveChildren = getCanHaveChildren;
+
+            SetFilterPredicate((o) => true);
 
             //this.IsVisible = true;
             this.UpdateIsVisible();
@@ -105,7 +117,6 @@ namespace FunctionZero.TreeListItemsSourceZero
                         // If the newly added node is expanded, it will already have children. Add them to the ItemsSource.
                         if (node.IsExpanded == true)
                             foreach (var child in node.Children)
-                                //child.IsVisible = true;
                                 child.UpdateIsVisible();
 
                     break;
@@ -147,21 +158,14 @@ namespace FunctionZero.TreeListItemsSourceZero
                     node.UpdateShowChevron();
 
                     if (node.IsVisible == true)
-                    {
                         // Will do nothing if node is root node.
                         // Root node is handled separately.
                         Insert(node);
-
-                        foreach (var child in node.Children)
-                            child.UpdateIsVisible();
-                    }
                     else
-                    {
-                        foreach (var child in node.Children)
-                            child.UpdateIsVisible();
-
                         _itemsSource.Remove(node);
-                    }
+
+                    foreach (var child in node.Children)
+                        child.UpdateIsVisible();
                     break;
             }
             OnNodeChanged(new TreeNodeContainerEventArgs(node, action));
