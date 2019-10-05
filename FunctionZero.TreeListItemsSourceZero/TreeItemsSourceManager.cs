@@ -17,20 +17,58 @@ namespace FunctionZero.TreeListItemsSourceZero
 
         internal Predicate<T> _filterPredicate;
 
+        internal Comparison<T> _sortComparison;
+
         public void SetFilterPredicate(Predicate<T> predicate)
         {
             _filterPredicate = predicate;
             FilterNode(this);
         }
 
+        public void SetSortComparison(Comparison<T> sortComparison)
+        {
+            _sortComparison = sortComparison;
+            if (this.IsExpanded)
+            {
+                this.IsExpanded = false;
+                this.IsExpanded = true;
+            }
+        }
+
+
+        // The below is DONE and just needs more test.
+        //private void SetVisibleByPredicate(TreeNodeContainer<T> node)
+        //{
+        //    // TODO: Work directly on node.Data, so all available data is recursed.
+        //    // TODO: This allows the data to e.g. correctly adjust folder sizes based on visible children.
+        //    // TODO: But, that means all datanodes are 'pulled' for their children, meaning we probably don't want to do that.
+        //    // TODO: Which means the filtering ought to be done outside of the TreeItemsSourceManager.
+        //    // TODO: Instead, let the data decide for itself what is visible, based on any criteria. Then,
+        //    // TODO: ask the TreeGridItemsSourceManager to update TreeNodeContainer visibility based on a predicate
+        //    // TODO: something like this: TreeItemsSourceManager.FilterVisibility((o) => o.IsFilterVisible);
+        //    // TODO: BOOM! :)
+        //    node.IsVisibleByPredicate = _filterPredicate(node.Data);
+        //    foreach (var child in node.Children)
+        //    {
+        //        SetVisibleByPredicate(child);
+        //    }
+        //}
+
         private void FilterNode(TreeNodeContainer<T> node)
         {
+            //node.UpdateIsVisible();
             foreach (var child in node.Children)
             {
                 child.UpdateIsVisible();
                 if (child.IsVisible)
                     FilterNode(child);
             }
+        }
+        private void FilterNode2_Test_It(TreeNodeContainer<T> node)
+        {
+            if (node.UpdateIsVisible())
+                foreach (var child in node.Children)
+                    FilterNode(child);
         }
 
         public bool IsTreeRootShown
@@ -148,11 +186,17 @@ namespace FunctionZero.TreeListItemsSourceZero
                     node.UpdateShowChevron();
 
                     if (node.IsVisible == true)
+                    {
                         // Will do nothing if node is root node.
                         // Root node is handled separately.
                         Insert(node);
+                        node.Parent.VisibleChildrenCount++;
+                    }
                     else
+                    {
+                        node.Parent.VisibleChildrenCount--;
                         _itemsSource.Remove(node);
+                    }
 
                     foreach (var child in node.Children)
                         child.UpdateIsVisible();
@@ -170,22 +214,64 @@ namespace FunctionZero.TreeListItemsSourceZero
                 return -1;
 
             // IndexOf returns -1 if not found.
-            int insertIndex = _itemsSource.IndexOf(item.Parent);
-            insertIndex += GetInsertOffset(item.Parent);
+            //int insertIndex = _itemsSource.IndexOf(item.Parent);
+            //insertIndex += GetInsertOffset(item.Parent, item);
+
+            int insertIndex = GetInsertIndex(item);
+
             _itemsSource.Insert(insertIndex, item);
             return insertIndex;
         }
 
-        private int GetInsertOffset(TreeNodeContainer<T> item)
+
+
+        private int GetInsertIndex(TreeNodeContainer<T> item)
+        {
+            var parent = item.Parent;
+
+            var insertIndex = _itemsSource.IndexOf(item.Parent)+1;
+
+            var insertNestLevel = parent.NestLevel + 1;
+            // Look for direct children of parent already in _itemsSource;
+
+            while(insertIndex < _itemsSource.Count)
+            {
+                var candidate = _itemsSource[insertIndex];
+                
+                if (candidate.NestLevel < insertNestLevel)
+                    return insertIndex;
+
+                if(candidate.NestLevel == insertNestLevel)
+                    if (_sortComparison?.Invoke(item.Data, candidate.Data) < 0)
+                        return insertIndex;
+
+                insertIndex++;
+            }
+            return insertIndex;
+        }
+
+        private int GetInsertOffset(TreeNodeContainer<T> parent, TreeNodeContainer<T> item)
         {
             int offset = 1;
 
-            foreach (var child in item.Children)
+            foreach (var child in parent.Children)
+            {
                 if (child._isInTree)
-                    offset += GetInsertOffset(child);// + 1;
+                {
+                    if ((item != null) && (_sortComparison!=null))
+                    {
+                        if (_sortComparison?.Invoke(item.Data, child.Data) < 0)
+                            return _itemsSource.IndexOf(child)- _itemsSource.IndexOf(parent);
+                        if (item.CanHaveChildren)
+                            throw new InvalidOperationException();
+                    }
+                    offset += GetInsertOffset(child, null);// + 1;
+                }
 
+            }
             return offset;
         }
+
 
         public override bool IsVisible => true;
 

@@ -27,14 +27,13 @@ namespace FunctionZero.TreeListItemsSourceZero
                 }
             }
         }
-
         public virtual bool IsVisible
         {
             get => Parent == null ? false : Parent.IsVisible && Parent.IsExpanded && Manager._filterPredicate(this.Data);
         }
 
         private bool _oldIsVisible;
-        public void UpdateIsVisible()
+        public bool UpdateIsVisible()
         {
             var newIsVisible = IsVisible;
             if (_oldIsVisible != newIsVisible)
@@ -42,6 +41,7 @@ namespace FunctionZero.TreeListItemsSourceZero
                 _oldIsVisible = newIsVisible;
                 this.OnPropertyChanged(nameof(IsVisible));
             }
+            return newIsVisible;
         }
 
         public bool ShowChevron
@@ -80,6 +80,8 @@ namespace FunctionZero.TreeListItemsSourceZero
 
         public TreeItemsSourceManager<T> Manager { get; }
         public T Data { get; }
+        public int VisibleChildrenCount { get; internal set; }
+
         internal TreeNodeContainer(TreeItemsSourceManager<T> manager, T data)
         {
             Data = data;
