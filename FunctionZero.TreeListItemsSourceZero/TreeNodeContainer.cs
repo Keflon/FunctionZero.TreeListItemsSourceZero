@@ -80,7 +80,6 @@ namespace FunctionZero.TreeListItemsSourceZero
 
         public TreeItemsSourceManager<T> Manager { get; }
         public T Data { get; }
-        public int VisibleChildrenCount { get; internal set; }
 
         internal TreeNodeContainer(TreeItemsSourceManager<T> manager, T data)
         {

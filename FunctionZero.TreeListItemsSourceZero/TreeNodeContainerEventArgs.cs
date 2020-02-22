@@ -2,13 +2,13 @@
 
 namespace FunctionZero.TreeListItemsSourceZero
 {
-    public class TreeNodeContainerEventArgs : EventArgs
+    public class TreeNodeContainerEventArgs<T> : EventArgs
     {
         public NodeAction Action { get; }
-        public object Node { get; }
+        public TreeNodeContainer<T> Node { get; }
 
 
-        public TreeNodeContainerEventArgs(object node, NodeAction action)
+        public TreeNodeContainerEventArgs(TreeNodeContainer<T> node, NodeAction action)
         {
             Action = action;
             Node = node;

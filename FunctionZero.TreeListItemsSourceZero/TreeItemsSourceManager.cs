@@ -22,7 +22,8 @@ namespace FunctionZero.TreeListItemsSourceZero
         public void SetFilterPredicate(Predicate<T> predicate)
         {
             _filterPredicate = predicate;
-            FilterNode(this);
+            //FilterNode(this);
+            FilterNode2_Test_It(this);
         }
 
         public void SetSortComparison(Comparison<T> sortComparison)
@@ -68,7 +69,7 @@ namespace FunctionZero.TreeListItemsSourceZero
         {
             if (node.UpdateIsVisible())
                 foreach (var child in node.Children)
-                    FilterNode(child);
+                    FilterNode2_Test_It(child);
         }
 
         public bool IsTreeRootShown
@@ -87,7 +88,7 @@ namespace FunctionZero.TreeListItemsSourceZero
         internal Func<T, IEnumerable> GetChildren { get; }
         internal Func<T, bool> GetCanHaveChildren { get; }
 
-        public delegate void TreeGridNodeEventHandler(object sender, TreeNodeContainerEventArgs e);
+        public delegate void TreeGridNodeEventHandler(object sender, TreeNodeContainerEventArgs<T> e);
 
         public event TreeGridNodeEventHandler NodeChanged;
 
@@ -106,7 +107,7 @@ namespace FunctionZero.TreeListItemsSourceZero
             GetCanHaveChildren = getCanHaveChildren;
 
             SetFilterPredicate((o) => true);
-
+            ShowChevron = true;
             this.UpdateIsVisible();
         }
 
@@ -130,7 +131,7 @@ namespace FunctionZero.TreeListItemsSourceZero
         // TODO: And / or have a strategy e.g. recycle 1000 containers, automatically recycle collapsed nodes by oldest first.
         // TODO: This is the connection between UI-databound TreeGridNodes (and their Data) and the app., so other cool stuff might go here.
         // TODO: UPDATE: Be aware, the DataGrid recycles DataGridRow objects by applying a new DataContext.
-        private void OnNodeChanged(TreeNodeContainerEventArgs e)
+        private void OnNodeChanged(TreeNodeContainerEventArgs<T> e)
         {
             NodeChanged?.Invoke(this, e);
         }
@@ -190,11 +191,9 @@ namespace FunctionZero.TreeListItemsSourceZero
                         // Will do nothing if node is root node.
                         // Root node is handled separately.
                         Insert(node);
-                        node.Parent.VisibleChildrenCount++;
                     }
                     else
                     {
-                        node.Parent.VisibleChildrenCount--;
                         _itemsSource.Remove(node);
                     }
 
@@ -202,20 +201,14 @@ namespace FunctionZero.TreeListItemsSourceZero
                         child.UpdateIsVisible();
                     break;
             }
-            OnNodeChanged(new TreeNodeContainerEventArgs(node, action));
+            OnNodeChanged(new TreeNodeContainerEventArgs<T>(node, action));
         }
 
-        // TODO: Consider some sort of sort-provider.
-        // TODO: This can be substantially optimised because it will often be called in batches with items from the same parent.
         private int Insert(TreeNodeContainer<T> item)
         {
             // Root node is handled separately.
             if (item == this)
                 return -1;
-
-            // IndexOf returns -1 if not found.
-            //int insertIndex = _itemsSource.IndexOf(item.Parent);
-            //insertIndex += GetInsertOffset(item.Parent, item);
 
             int insertIndex = GetInsertIndex(item);
 
@@ -223,54 +216,52 @@ namespace FunctionZero.TreeListItemsSourceZero
             return insertIndex;
         }
 
-
-
+        // TODO: This can be substantially optimised because it will often be called in batches with items from the same parent.
+        // TODO: _itemsSource.IndexOf(item.Parent) is expensive.
         private int GetInsertIndex(TreeNodeContainer<T> item)
         {
             var parent = item.Parent;
 
-            var insertIndex = _itemsSource.IndexOf(item.Parent)+1;
+            var insertIndex = _itemsSource.IndexOf(item.Parent) + 1;
 
             var insertNestLevel = parent.NestLevel + 1;
             // Look for direct children of parent already in _itemsSource;
-
-            while(insertIndex < _itemsSource.Count)
+            while (insertIndex < _itemsSource.Count)
             {
                 var candidate = _itemsSource[insertIndex];
-                
+
+                // If we've passed any children of parent ...
                 if (candidate.NestLevel < insertNestLevel)
                     return insertIndex;
 
-                if(candidate.NestLevel == insertNestLevel)
+                // If we're considering direct children of parent ...
+                if (candidate.NestLevel == insertNestLevel)
+                    // ... and our item comes before it ...
                     if (_sortComparison?.Invoke(item.Data, candidate.Data) < 0)
                         return insertIndex;
 
                 insertIndex++;
             }
+            // If we're sticking it at the end of any direct children of parent ...
             return insertIndex;
         }
 
-        private int GetInsertOffset(TreeNodeContainer<T> parent, TreeNodeContainer<T> item)
-        {
-            int offset = 1;
 
-            foreach (var child in parent.Children)
-            {
-                if (child._isInTree)
-                {
-                    if ((item != null) && (_sortComparison!=null))
-                    {
-                        if (_sortComparison?.Invoke(item.Data, child.Data) < 0)
-                            return _itemsSource.IndexOf(child)- _itemsSource.IndexOf(parent);
-                        if (item.CanHaveChildren)
-                            throw new InvalidOperationException();
-                    }
-                    offset += GetInsertOffset(child, null);// + 1;
-                }
+        // Before sorting was implemented ...
+        //private int GetInsertOffset(TreeNodeContainer<T> parent)
+        //{
+        //    int offset = 1;
 
-            }
-            return offset;
-        }
+        //    foreach (var child in parent.Children)
+        //    {
+        //        if (child._isInTree)
+        //        {
+        //            offset += GetInsertOffset(child);// + 1;
+        //        }
+
+        //    }
+        //    return offset;
+        //}
 
 
         public override bool IsVisible => true;
