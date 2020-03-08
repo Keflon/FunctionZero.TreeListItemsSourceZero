@@ -57,6 +57,8 @@ namespace FunctionZero.TreeListItemsSourceZero
             }
         }
 
+
+        // TODO: Manage ShowChevron in one place!
         public bool UpdateShowChevron()
         {
             if (IsVisible == false)
@@ -106,7 +108,8 @@ namespace FunctionZero.TreeListItemsSourceZero
                 case NotifyCollectionChangedAction.Add:
                     if (_hasMadeChildren)
                     {
-                        if (_observableDataChildren.Count == 1)
+                        //if (_observableDataChildren.Count == 1)
+                        if (Children.Count == 0)
                             ShowChevron = true;
 
                         if (e.NewItems.Count != 1)
@@ -119,7 +122,8 @@ namespace FunctionZero.TreeListItemsSourceZero
                 case NotifyCollectionChangedAction.Remove:
                     if (_hasMadeChildren)
                     {
-                        if (_observableDataChildren.Count == 0)
+                        //if (_observableDataChildren.Count == 0)
+                        if(Children.Count == 1)
                             ShowChevron = false;
                         // TODO: Match node to container and remove the container.
                         // TODO: Use a map.
@@ -196,7 +200,7 @@ namespace FunctionZero.TreeListItemsSourceZero
             }
         }
 
-        private ObservableCollection<T> _observableDataChildren;
+        //private ObservableCollection<T> _observableDataChildren;
         internal bool _isInTree;
 
         protected override async void OnPropertyChanged([CallerMemberName] string propertyName = null)
@@ -205,8 +209,9 @@ namespace FunctionZero.TreeListItemsSourceZero
 
             if (propertyName == nameof(IsExpanded))
             {
-                if (_dataChildren == null)
-                    GetDataChildren();
+                //if (IsExpanded == true)
+                    if (_dataChildren == null)
+                        GetDataChildren();
 
                 Manager.ChangeNode(this, NodeAction.IsExpandedChanged);
             }
@@ -228,9 +233,8 @@ namespace FunctionZero.TreeListItemsSourceZero
             {
                 _dataChildren = Manager.GetChildren(Data);
 
-                if (_dataChildren is ObservableCollection<T> observableDataChildren)
+                if (_dataChildren is INotifyCollectionChanged observableDataChildren)
                 {
-                    _observableDataChildren = observableDataChildren;
                     observableDataChildren.CollectionChanged += _dataChildren_CollectionChanged;
                 }
             }

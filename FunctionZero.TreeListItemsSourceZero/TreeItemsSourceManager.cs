@@ -22,38 +22,29 @@ namespace FunctionZero.TreeListItemsSourceZero
         public void SetFilterPredicate(Predicate<T> predicate)
         {
             _filterPredicate = predicate;
-            //FilterNode(this);
+            ReFilter();
+        }
+
+        public void ReFilter()
+        {
             FilterNode2_Test_It(this);
+
         }
 
         public void SetSortComparison(Comparison<T> sortComparison)
         {
             _sortComparison = sortComparison;
+            ReSort();
+        }
+
+        public void ReSort()
+        {
             if (this.IsExpanded)
             {
                 this.IsExpanded = false;
                 this.IsExpanded = true;
             }
         }
-
-
-        // The below is DONE and just needs more test.
-        //private void SetVisibleByPredicate(TreeNodeContainer<T> node)
-        //{
-        //    // TODO: Work directly on node.Data, so all available data is recursed.
-        //    // TODO: This allows the data to e.g. correctly adjust folder sizes based on visible children.
-        //    // TODO: But, that means all datanodes are 'pulled' for their children, meaning we probably don't want to do that.
-        //    // TODO: Which means the filtering ought to be done outside of the TreeItemsSourceManager.
-        //    // TODO: Instead, let the data decide for itself what is visible, based on any criteria. Then,
-        //    // TODO: ask the TreeGridItemsSourceManager to update TreeNodeContainer visibility based on a predicate
-        //    // TODO: something like this: TreeItemsSourceManager.FilterVisibility((o) => o.IsFilterVisible);
-        //    // TODO: BOOM! :)
-        //    node.IsVisibleByPredicate = _filterPredicate(node.Data);
-        //    foreach (var child in node.Children)
-        //    {
-        //        SetVisibleByPredicate(child);
-        //    }
-        //}
 
         private void FilterNode(TreeNodeContainer<T> node)
         {
